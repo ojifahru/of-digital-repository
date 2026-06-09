@@ -25,7 +25,7 @@ class TriDharmasTable
                     ->sortable()
                     ->wrap()
                     ->limit(50) // tampilkan max 50 karakter
-                    ->tooltip(fn($record) => $record->title),
+                    ->tooltip(fn ($record) => $record->title),
 
                 TextColumn::make('category.name')
                     ->label('Kategori')
@@ -77,30 +77,47 @@ class TriDharmasTable
                     ->label('Jenis Dokumen')
                     ->relationship('documentType', 'name'),
 
+                SelectFilter::make('faculty_id')
+                    ->label('Fakultas')
+                    ->relationship(
+                        'faculty',
+                        'name',
+                        fn (Builder $query): Builder => self::scopeFacultyQuery($query),
+                    )
+                    ->visible(fn (): bool => Auth::user()?->hasRole('super_admin') ?? false),
+
+                SelectFilter::make('study_program_id')
+                    ->label('Program Studi')
+                    ->relationship(
+                        'studyProgram',
+                        'name',
+                        fn (Builder $query): Builder => self::scopeStudyProgramQuery($query),
+                    )
+                    ->visible(fn (): bool => Auth::user()?->hasRole('super_admin') ?? false),
             ])
 
             ->recordActions([
                 EditAction::make()
                     ->label('Ubah')
                     ->visible(
-                        fn($record): bool => Auth::user()?->can('update', $record) ?? false
+                        fn ($record): bool => Auth::user()?->can('update', $record) ?? false
                     ),
                 RestoreAction::make()
                     ->label('Pulihkan')
                     ->visible(
-                        fn($record): bool => ! is_null($record->deleted_at)
+                        fn ($record): bool => ! is_null($record->deleted_at)
                             && (Auth::user()?->can('restore', $record) ?? false)
                     ),
                 DeleteAction::make()
                     ->label('Hapus')
                     ->visible(
-                        fn($record): bool => is_null($record->deleted_at)
+                        fn ($record): bool => is_null($record->deleted_at)
                             && (Auth::user()?->can('delete', $record) ?? false)
                     ),
                 ForceDeleteAction::make()
                     ->label('Hapus Permanen')
                     ->visible(
-                        fn($record): bool => ! is_null($record->deleted_at)
+                        fn ($record): bool => ! is_null($record->deleted_at)
                             && (Auth::user()?->can('forceDelete', $record) ?? false)
                     ),
             ])
