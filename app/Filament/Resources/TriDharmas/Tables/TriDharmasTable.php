@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\TriDharmas\Tables;
 
+use App\Models\User;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteAction;
@@ -9,6 +10,8 @@ use Filament\Actions\RestoreAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class TriDharmasTable
 {
@@ -76,40 +79,87 @@ class TriDharmasTable
 
                 SelectFilter::make('faculty_id')
                     ->label('Fakultas')
-                    ->relationship('faculty', 'name'),
+                    ->relationship(
+                        'faculty',
+                        'name',
+                        fn (Builder $query): Builder => self::scopeFacultyQuery($query),
+                    ),
 
                 SelectFilter::make('study_program_id')
                     ->label('Program Studi')
-                    ->relationship('studyProgram', 'name'),
+                    ->relationship(
+                        'studyProgram',
+                        'name',
+                        fn (Builder $query): Builder => self::scopeStudyProgramQuery($query),
+                    ),
             ])
 
             ->recordActions([
                 EditAction::make()
                     ->label('Ubah')
                     ->visible(
-                        fn ($record) => auth()->user()->can('Update:TriDharma')
+                        fn ($record): bool => Auth::user()?->can('update', $record) ?? false
                     ),
                 RestoreAction::make()
                     ->label('Pulihkan')
                     ->visible(
-                        fn ($record) => ! is_null($record->deleted_at)
-                            && auth()->user()->can('Restore:TriDharma')
+                        fn ($record): bool => ! is_null($record->deleted_at)
+                            && (Auth::user()?->can('restore', $record) ?? false)
                     ),
                 DeleteAction::make()
                     ->label('Hapus')
                     ->visible(
-                        fn ($record) => auth()->user()->can('Delete:TriDharma')
+                        fn ($record): bool => is_null($record->deleted_at)
+                            && (Auth::user()?->can('delete', $record) ?? false)
                     ),
                 ForceDeleteAction::make()
                     ->label('Hapus Permanen')
                     ->visible(
-                        fn ($record) => ! is_null($record->deleted_at)
-                            && auth()->user()->can('ForceDelete:TriDharma')
+                        fn ($record): bool => ! is_null($record->deleted_at)
+                            && (Auth::user()?->can('forceDelete', $record) ?? false)
                     ),
             ])
 
             ->toolbarActions([])
 
             ->defaultSort('created_at', 'desc');
+    }
+
+    private static function scopeFacultyQuery(Builder $query): Builder
+    {
+        $query->whereNull('deleted_at');
+        $user = Auth::user();
+
+        if (! $user instanceof User || $user->canManageAllStudyPrograms()) {
+            return $query;
+        }
+
+        if ($user->study_program_id === null) {
+            return $query->whereKey([]);
+        }
+
+        $user->loadMissing('studyProgram:id,faculty_id');
+
+        if ($user->studyProgram?->faculty_id === null) {
+            return $query->whereKey([]);
+        }
+
+        return $query->whereKey($user->studyProgram->faculty_id);
+    }
+
+    private static function scopeStudyProgramQuery(Builder $query): Builder
+    {
+        $query->whereNull('deleted_at');
+        $user = Auth::user();
+
+        if (! $user instanceof User || $user->canManageAllStudyPrograms()) {
+            return $query;
+        }
+
+        if ($user->study_program_id === null) {
+            return $query->whereKey([]);
+        }
+
+        return $query->whereKey($user->study_program_id);
     }
 }

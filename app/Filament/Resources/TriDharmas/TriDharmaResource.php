@@ -9,11 +9,14 @@ use App\Filament\Resources\TriDharmas\Pages\ListTriDharmas;
 use App\Filament\Resources\TriDharmas\Schemas\TriDharmaForm;
 use App\Filament\Resources\TriDharmas\Tables\TriDharmasTable;
 use App\Models\TriDharma;
+use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 use UnitEnum;
 
 class TriDharmaResource extends Resource
@@ -40,6 +43,18 @@ class TriDharmaResource extends Resource
     public static function table(Table $table): Table
     {
         return TriDharmasTable::configure($table);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = Auth::user();
+
+        if (! $user instanceof User) {
+            return $query->whereKey([]);
+        }
+
+        return $query->visibleToUser($user);
     }
 
     public static function getRelations(): array

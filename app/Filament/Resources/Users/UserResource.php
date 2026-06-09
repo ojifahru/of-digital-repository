@@ -14,6 +14,8 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 use UnitEnum;
 
 class UserResource extends Resource
@@ -40,6 +42,30 @@ class UserResource extends Resource
     public static function table(Table $table): Table
     {
         return UsersTable::configure($table);
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery();
+        $user = Auth::user();
+
+        if (! $user instanceof User || ! $user->hasRole('admin') || $user->hasRole('super_admin')) {
+            return $query;
+        }
+
+        if ($user->study_program_id === null) {
+            return $query->whereKey($user->getKey());
+        }
+
+        return $query->where(function (Builder $query) use ($user): void {
+            $query
+                ->whereKey($user->getKey())
+                ->orWhere(function (Builder $query) use ($user): void {
+                    $query
+                        ->where('study_program_id', $user->study_program_id)
+                        ->whereHas('roles', fn (Builder $query): Builder => $query->where('name', 'editor'));
+                });
+        });
     }
 
     public static function getRelations(): array

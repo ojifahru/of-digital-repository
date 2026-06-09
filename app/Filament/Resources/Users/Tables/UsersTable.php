@@ -20,7 +20,10 @@ class UsersTable
                 return true;
             }
 
-            return $record->hasRole('editor') && ! $record->hasAnyRole(['admin', 'super_admin']);
+            return $record->hasRole('editor')
+                && ! $record->hasAnyRole(['admin', 'super_admin'])
+                && $user->study_program_id !== null
+                && $record->study_program_id === $user->study_program_id;
         };
 
         return $table
@@ -42,6 +45,12 @@ class UsersTable
                         'success' => 'admin',
                         'secondary' => 'user',
                     ]),
+
+                TextColumn::make('studyProgram.name')
+                    ->label('Program Studi')
+                    ->searchable()
+                    ->sortable()
+                    ->placeholder('-'),
             ])
 
             ->recordUrl(function ($record) use ($canAdminManageRecord): ?string {

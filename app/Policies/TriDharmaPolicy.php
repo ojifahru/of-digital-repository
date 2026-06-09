@@ -4,67 +4,86 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use Illuminate\Foundation\Auth\User as AuthUser;
 use App\Models\TriDharma;
+use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class TriDharmaPolicy
 {
     use HandlesAuthorization;
-    
-    public function viewAny(AuthUser $authUser): bool
+
+    public function before(User $authUser, string $ability): ?bool
     {
-        return $authUser->can('ViewAny:TriDharma');
+        if ($authUser->canManageAllStudyPrograms()) {
+            return true;
+        }
+
+        return null;
     }
 
-    public function view(AuthUser $authUser, TriDharma $triDharma): bool
+    public function viewAny(User $authUser): bool
     {
-        return $authUser->can('View:TriDharma');
+        return $authUser->can('ViewAny:TriDharma')
+            && $authUser->study_program_id !== null;
     }
 
-    public function create(AuthUser $authUser): bool
+    public function view(User $authUser, TriDharma $triDharma): bool
     {
-        return $authUser->can('Create:TriDharma');
+        return $authUser->can('View:TriDharma')
+            && $authUser->canAccessStudyProgram($triDharma->study_program_id);
     }
 
-    public function update(AuthUser $authUser, TriDharma $triDharma): bool
+    public function create(User $authUser): bool
     {
-        return $authUser->can('Update:TriDharma');
+        return $authUser->can('Create:TriDharma')
+            && $authUser->study_program_id !== null;
     }
 
-    public function delete(AuthUser $authUser, TriDharma $triDharma): bool
+    public function update(User $authUser, TriDharma $triDharma): bool
     {
-        return $authUser->can('Delete:TriDharma');
+        return $authUser->can('Update:TriDharma')
+            && $authUser->canAccessStudyProgram($triDharma->study_program_id);
     }
 
-    public function restore(AuthUser $authUser, TriDharma $triDharma): bool
+    public function delete(User $authUser, TriDharma $triDharma): bool
     {
-        return $authUser->can('Restore:TriDharma');
+        return $authUser->can('Delete:TriDharma')
+            && $authUser->canAccessStudyProgram($triDharma->study_program_id);
     }
 
-    public function forceDelete(AuthUser $authUser, TriDharma $triDharma): bool
+    public function restore(User $authUser, TriDharma $triDharma): bool
     {
-        return $authUser->can('ForceDelete:TriDharma');
+        return $authUser->can('Restore:TriDharma')
+            && $authUser->canAccessStudyProgram($triDharma->study_program_id);
     }
 
-    public function forceDeleteAny(AuthUser $authUser): bool
+    public function forceDelete(User $authUser, TriDharma $triDharma): bool
     {
-        return $authUser->can('ForceDeleteAny:TriDharma');
+        return $authUser->can('ForceDelete:TriDharma')
+            && $authUser->canAccessStudyProgram($triDharma->study_program_id);
     }
 
-    public function restoreAny(AuthUser $authUser): bool
+    public function forceDeleteAny(User $authUser): bool
     {
-        return $authUser->can('RestoreAny:TriDharma');
+        return $authUser->can('ForceDeleteAny:TriDharma')
+            && $authUser->study_program_id !== null;
     }
 
-    public function replicate(AuthUser $authUser, TriDharma $triDharma): bool
+    public function restoreAny(User $authUser): bool
     {
-        return $authUser->can('Replicate:TriDharma');
+        return $authUser->can('RestoreAny:TriDharma')
+            && $authUser->study_program_id !== null;
     }
 
-    public function reorder(AuthUser $authUser): bool
+    public function replicate(User $authUser, TriDharma $triDharma): bool
     {
-        return $authUser->can('Reorder:TriDharma');
+        return $authUser->can('Replicate:TriDharma')
+            && $authUser->canAccessStudyProgram($triDharma->study_program_id);
     }
 
+    public function reorder(User $authUser): bool
+    {
+        return $authUser->can('Reorder:TriDharma')
+            && $authUser->study_program_id !== null;
+    }
 }

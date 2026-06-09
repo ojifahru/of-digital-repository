@@ -3,11 +3,13 @@
 namespace App\Filament\Resources\TriDharmas\Pages;
 
 use App\Filament\Resources\TriDharmas\TriDharmaResource;
+use App\Models\TriDharma;
+use App\Models\User;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Schemas\Components\Tabs\Tab;
 use Illuminate\Database\Eloquent\Builder;
-use App\Models\TriDharma;
+use Illuminate\Support\Facades\Auth;
 
 class ListTriDharmas extends ListRecords
 {
@@ -18,7 +20,7 @@ class ListTriDharmas extends ListRecords
         return [
             CreateAction::make()
                 ->label('Tambah Tri Dharma')
-                ->visible(fn() => auth()->user()->can('Create:TriDharma')),
+                ->visible(fn (): bool => Auth::user()?->can('create', TriDharma::class) ?? false),
         ];
     }
 
@@ -27,27 +29,39 @@ class ListTriDharmas extends ListRecords
         $tabs = [
             'published' => Tab::make('Published')
                 ->icon('heroicon-o-check-circle')
-                ->badge(fn() => TriDharma::where('status', 'published')->count())
-                ->query(fn(Builder $query) => $query->where('status', 'published')),
+                ->badge(fn (): int => $this->getScopedTriDharmaQuery()->where('status', 'published')->count())
+                ->query(fn (Builder $query) => $query->where('status', 'published')),
 
             'draft' => Tab::make('Draft')
                 ->icon('heroicon-o-pencil-square')
-                ->badge(fn() => TriDharma::where('status', 'draft')->count())
-                ->query(fn(Builder $query) => $query->where('status', 'draft')),
+                ->badge(fn (): int => $this->getScopedTriDharmaQuery()->where('status', 'draft')->count())
+                ->query(fn (Builder $query) => $query->where('status', 'draft')),
 
             'all' => Tab::make('Semua')
                 ->icon('heroicon-o-archive-box')
-                ->badge(fn() => TriDharma::count()),
+                ->badge(fn (): int => $this->getScopedTriDharmaQuery()->count()),
         ];
 
         // 👑 SUPER ADMIN SAJA
-        if (auth()->user()->hasRole('super_admin')) {
+        if (Auth::user()?->hasRole('super_admin')) {
             $tabs['deleted'] = Tab::make('Dihapus')
                 ->icon('heroicon-o-trash')
-                ->badge(fn() => TriDharma::onlyTrashed()->count())
-                ->query(fn(Builder $query) => $query->onlyTrashed());
+                ->badge(fn (): int => $this->getScopedTriDharmaQuery()->onlyTrashed()->count())
+                ->query(fn (Builder $query) => $query->onlyTrashed());
         }
 
         return $tabs;
+    }
+
+    private function getScopedTriDharmaQuery(): Builder
+    {
+        $query = TriDharma::query();
+        $user = Auth::user();
+
+        if (! $user instanceof User) {
+            return $query->whereKey([]);
+        }
+
+        return $query->visibleToUser($user);
     }
 }

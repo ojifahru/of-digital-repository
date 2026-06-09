@@ -3,9 +3,11 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -15,7 +17,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, LogsActivity, Notifiable, SoftDeletes;
 
     /**
@@ -26,6 +28,7 @@ class User extends Authenticatable implements FilamentUser
     protected $fillable = [
         'name',
         'email',
+        'study_program_id',
         'password',
     ];
 
@@ -48,15 +51,21 @@ class User extends Authenticatable implements FilamentUser
     {
         return [
             'email_verified_at' => 'datetime',
+            'study_program_id' => 'integer',
             'password' => 'hashed',
         ];
+    }
+
+    public function studyProgram(): BelongsTo
+    {
+        return $this->belongsTo(StudyProgram::class);
     }
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
             ->useLogName('user')
-            ->logOnly(['name', 'email'])
+            ->logOnly(['name', 'email', 'study_program_id'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
@@ -64,5 +73,23 @@ class User extends Authenticatable implements FilamentUser
     public function canAccessPanel(Panel $panel): bool
     {
         return $this->hasRole(['admin', 'super_admin', 'editor']);
+    }
+
+    public function canManageAllStudyPrograms(): bool
+    {
+        return $this->hasRole('super_admin');
+    }
+
+    public function canAccessStudyProgram(?int $studyProgramId): bool
+    {
+        if ($this->canManageAllStudyPrograms()) {
+            return true;
+        }
+
+        if ($studyProgramId === null || $this->study_program_id === null) {
+            return false;
+        }
+
+        return $this->study_program_id === $studyProgramId;
     }
 }

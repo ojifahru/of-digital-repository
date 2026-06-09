@@ -49,6 +49,11 @@ class StudyProgram extends Model
         return $this->hasMany(TriDharma::class);
     }
 
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class);
+    }
+
     protected static function booted(): void
     {
         static::deleting(function (self $studyProgram): void {

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
@@ -48,11 +49,11 @@ class TriDharma extends Model
                 $suffix = 2;
 
                 while (self::query()->where('slug', $candidate)->exists()) {
-                    $candidate = $base . '-' . $suffix;
+                    $candidate = $base.'-'.$suffix;
                     $suffix++;
 
                     if ($suffix > 50) {
-                        $candidate = $base . '-' . Str::lower(Str::random(6));
+                        $candidate = $base.'-'.Str::lower(Str::random(6));
                         break;
                     }
                 }
@@ -68,6 +69,23 @@ class TriDharma extends Model
         'download_count' => 'integer',
         'deleted_at' => 'datetime',
     ];
+
+    /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeVisibleToUser(Builder $query, User $user): Builder
+    {
+        if ($user->canManageAllStudyPrograms()) {
+            return $query;
+        }
+
+        if ($user->study_program_id === null) {
+            return $query->whereKey([]);
+        }
+
+        return $query->where('study_program_id', $user->study_program_id);
+    }
 
     public function searchableAs(): string
     {
@@ -101,7 +119,7 @@ class TriDharma extends Model
         ]);
 
         $activeAuthors = $this->authors
-            ->filter(fn($author) => $author->deleted_at === null)
+            ->filter(fn ($author) => $author->deleted_at === null)
             ->values();
 
         $normalizedTitle = $this->normalizeText((string) $this->title);

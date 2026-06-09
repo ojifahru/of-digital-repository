@@ -3,14 +3,16 @@
 namespace App\Filament\Resources\TriDharmas\Schemas;
 
 use App\Models\StudyProgram;
+use App\Models\User;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Textarea;
-use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
-use Filament\Forms\Components\RichEditor;
+use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class TriDharmaForm
 {
@@ -50,12 +52,11 @@ class TriDharmaForm
                                 ->relationship(
                                     'category',
                                     'name',
-                                    fn($query) => $query->whereNull('deleted_at')
+                                    fn ($query) => $query->whereNull('deleted_at')
                                 )
                                 ->searchable()
                                 ->preload()
                                 ->required(),
-
 
                             Select::make('document_type_id')
                                 ->label('Jenis Dokumen')
@@ -76,24 +77,24 @@ class TriDharmaForm
                                 ->relationship(
                                     'faculty',
                                     'name',
-                                    fn($query) => $query->whereNull('deleted_at')
+                                    fn (Builder $query): Builder => self::scopeFacultyQuery($query)
                                 )
+                                ->default(fn (): ?int => self::currentStudyProgram()?->faculty_id)
                                 ->required()
                                 ->reactive()
-                                ->afterStateUpdated(fn(callable $set) => $set('study_program_id', null)),
+                                ->disabled(fn (): bool => self::isStudyProgramLocked())
+                                ->dehydrated()
+                                ->afterStateUpdated(fn (callable $set) => $set('study_program_id', null)),
 
                             Select::make('study_program_id')
                                 ->label('Program Studi')
                                 ->options(
-                                    fn(callable $get) =>
-                                    $get('faculty_id')
-                                        ? StudyProgram::where('faculty_id', $get('faculty_id'))
-                                        ->whereNull('deleted_at')
-                                        ->pluck('name', 'id')
-                                        : []
+                                    fn (callable $get) => self::studyProgramOptions($get('faculty_id'))
                                 )
+                                ->default(fn (): ?int => self::currentUser()?->study_program_id)
                                 ->required()
-                                ->disabled(fn(callable $get) => ! $get('faculty_id')),
+                                ->disabled(fn (callable $get): bool => self::isStudyProgramLocked() || ! $get('faculty_id'))
+                                ->dehydrated(),
 
                             Select::make('authors')
                                 ->label('Author')
@@ -101,7 +102,7 @@ class TriDharmaForm
                                 ->relationship(
                                     'authors',
                                     'name',
-                                    fn($query) => $query->whereNull('deleted_at')
+                                    fn ($query) => $query->whereNull('deleted_at')
                                 )
                                 ->searchable()
                                 ->preload()
@@ -141,5 +142,74 @@ class TriDharmaForm
                         ]),
                 ]),
         ]);
+    }
+
+    private static function currentUser(): ?User
+    {
+        $user = Auth::user();
+
+        return $user instanceof User ? $user : null;
+    }
+
+    private static function currentStudyProgram(): ?StudyProgram
+    {
+        $user = self::currentUser();
+
+        if (! $user instanceof User || $user->study_program_id === null) {
+            return null;
+        }
+
+        $user->loadMissing('studyProgram:id,faculty_id');
+
+        return $user->studyProgram;
+    }
+
+    private static function isStudyProgramLocked(): bool
+    {
+        $user = self::currentUser();
+
+        return $user instanceof User && ! $user->canManageAllStudyPrograms();
+    }
+
+    private static function scopeFacultyQuery(Builder $query): Builder
+    {
+        $query->whereNull('deleted_at');
+        $studyProgram = self::currentStudyProgram();
+
+        if (! self::isStudyProgramLocked()) {
+            return $query;
+        }
+
+        if (! $studyProgram instanceof StudyProgram) {
+            return $query->whereKey([]);
+        }
+
+        return $query->whereKey($studyProgram->faculty_id);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private static function studyProgramOptions(mixed $facultyId): array
+    {
+        $query = StudyProgram::query()
+            ->whereNull('deleted_at')
+            ->orderBy('name');
+
+        $user = self::currentUser();
+
+        if ($user instanceof User && ! $user->canManageAllStudyPrograms()) {
+            if ($user->study_program_id === null) {
+                return [];
+            }
+
+            $query->whereKey($user->study_program_id);
+        } elseif ($facultyId) {
+            $query->where('faculty_id', $facultyId);
+        } else {
+            return [];
+        }
+
+        return $query->pluck('name', 'id')->all();
     }
 }
