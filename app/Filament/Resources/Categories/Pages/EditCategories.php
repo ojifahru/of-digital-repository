@@ -16,7 +16,7 @@ class EditCategories extends EditRecord
         return [
             DeleteAction::make()
                 ->label('Hapus Kategori')
-                ->visible(fn() => auth()->user()->can('Delete:Category')),
+                ->visible(fn () => auth()->user()->can('Delete:Categories')),
         ];
     }
 

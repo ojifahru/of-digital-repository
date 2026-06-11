@@ -22,13 +22,18 @@ class TriDharmaObserver
 
     protected function updateFileSize(TriDharma $triDharma): void
     {
-        if (
-            $triDharma->file_path &&
-            Storage::disk('public')->exists($triDharma->file_path)
-        ) {
+        $disk = $triDharma->documentDisk();
+
+        if ($disk === null) {
             $triDharma->updateQuietly([
-                'file_size' => Storage::disk('public')->size($triDharma->file_path),
+                'file_size' => null,
             ]);
+
+            return;
         }
+
+        $triDharma->updateQuietly([
+            'file_size' => Storage::disk($disk)->size($triDharma->documentPath()),
+        ]);
     }
 }

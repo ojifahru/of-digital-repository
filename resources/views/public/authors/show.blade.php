@@ -52,7 +52,7 @@
                     <div class="text-sm font-semibold text-gray-900">Bio</div>
                 </div>
                 <div class="mt-3 rich-content">
-                    {!! $author->bio !!}
+                    {!! str($author->bio)->sanitizeHtml() !!}
                 </div>
             </div>
         @endif

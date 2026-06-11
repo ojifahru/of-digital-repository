@@ -17,6 +17,7 @@ use UnitEnum;
 class ManagePublicSiteSettings extends SettingsPage
 {
     use HasPageShield;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
     protected static string|UnitEnum|null $navigationGroup = 'Sistem';
@@ -43,6 +44,7 @@ class ManagePublicSiteSettings extends SettingsPage
                             ->label('Logo Situs')
                             ->disk('public')
                             ->directory('branding')
+                            ->visibility('public')
                             ->image()
                             ->imageEditor()
                             ->helperText('Dipakai di header dan footer publik.')
@@ -51,6 +53,7 @@ class ManagePublicSiteSettings extends SettingsPage
                             ->label('Favicon')
                             ->disk('public')
                             ->directory('branding')
+                            ->visibility('public')
                             ->image()
                             ->imageEditor()
                             ->helperText('Gunakan PNG persegi kecil untuk tab browser.')

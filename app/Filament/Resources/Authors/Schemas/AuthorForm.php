@@ -3,8 +3,8 @@
 namespace App\Filament\Resources\Authors\Schemas;
 
 use Filament\Forms\Components\FileUpload;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\RichEditor;
+use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -62,6 +62,8 @@ class AuthorForm
                             ->label('Foto')
                             ->disk('public')
                             ->directory('authors')
+                            ->visibility('public')
+                            ->preventFilePathTampering()
                             ->image()
                             ->imageEditor()
                             ->maxSize(2048),

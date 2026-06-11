@@ -133,8 +133,10 @@ class TriDharmaForm
 
                             FileUpload::make('file_path')
                                 ->label('File Dokumen (PDF)')
-                                ->disk('public')
+                                ->disk('local')
                                 ->directory('tri_dharmas')
+                                ->visibility('private')
+                                ->preventFilePathTampering()
                                 ->acceptedFileTypes(['application/pdf'])
                                 ->maxSize(10240)
                                 ->required()

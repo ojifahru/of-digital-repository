@@ -16,15 +16,16 @@ class EditAuthor extends EditRecord
         return [
             DeleteAction::make()
                 ->label('Hapus Author')
-                ->visible(fn() => auth()->user()->can('Delete:Author')),
+                ->visible(fn () => auth()->user()->can('Delete:Author')),
         ];
     }
 
     public function canView(): bool
     {
-        if (auth()->user()->can('Edit:Author')) {
+        if (auth()->user()->can('Update:Author')) {
             return true;
         }
+
         return false;
     }
 

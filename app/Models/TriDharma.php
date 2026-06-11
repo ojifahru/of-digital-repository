@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Scout\Searchable;
 use Spatie\Activitylog\LogOptions;
@@ -69,6 +70,42 @@ class TriDharma extends Model
         'download_count' => 'integer',
         'deleted_at' => 'datetime',
     ];
+
+    public function documentPath(): string
+    {
+        return (string) $this->file_path;
+    }
+
+    public function documentDisk(): ?string
+    {
+        $path = $this->documentPath();
+
+        if ($path === '') {
+            return null;
+        }
+
+        foreach (['local', 'public'] as $disk) {
+            if (Storage::disk($disk)->exists($path)) {
+                return $disk;
+            }
+        }
+
+        return null;
+    }
+
+    public function documentDownloadName(): string
+    {
+        $path = $this->documentPath();
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
+        $baseNameSource = $this->title ?: pathinfo($path, PATHINFO_FILENAME);
+        $baseName = Str::slug((string) $baseNameSource, '_');
+
+        if ($baseName === '') {
+            $baseName = 'document';
+        }
+
+        return $extension !== '' ? $baseName.'.'.$extension : $baseName;
+    }
 
     /**
      * @param  Builder<self>  $query

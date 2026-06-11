@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('authors', function () {
-            DB::statement('ALTER TABLE authors MODIFY bio TEXT NULL');
-            DB::statement('ALTER TABLE authors MODIFY image_url VARCHAR(500) NULL');
+        Schema::table('authors', function (Blueprint $table): void {
+            $table->text('bio')->nullable()->change();
+            $table->string('image_url', 500)->nullable()->change();
         });
     }
 
@@ -22,9 +22,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('authors', function () {
-            DB::statement('ALTER TABLE authors MODIFY bio VARCHAR(255) NULL');
-            DB::statement('ALTER TABLE authors MODIFY image_url VARCHAR(255) NULL');
+        Schema::table('authors', function (Blueprint $table): void {
+            $table->string('bio')->nullable()->change();
+            $table->string('image_url')->nullable()->change();
         });
     }
 };

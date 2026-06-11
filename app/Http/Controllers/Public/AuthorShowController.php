@@ -24,6 +24,8 @@ class AuthorShowController extends Controller
                 'authors' => function ($authorQuery) {
                     $authorQuery->whereNull('authors.deleted_at');
                 },
+                'category',
+                'documentType',
             ])
             ->latest()
             ->paginate(12)

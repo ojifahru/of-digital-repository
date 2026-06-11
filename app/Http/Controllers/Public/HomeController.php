@@ -26,9 +26,14 @@ class HomeController extends Controller
         ];
 
         $latestDocuments = (clone $publishedDocumentsQuery)
-            ->with(['authors' => function ($query) {
-                $query->whereNull('authors.deleted_at');
-            }])
+            ->with([
+                'authors' => function ($query) {
+                    $query->whereNull('authors.deleted_at');
+                },
+                'category',
+                'faculty',
+                'studyProgram',
+            ])
             ->orderBy('publish_year', 'desc')
             ->limit(8)
             ->get();

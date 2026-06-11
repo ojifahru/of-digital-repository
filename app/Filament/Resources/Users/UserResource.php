@@ -49,8 +49,16 @@ class UserResource extends Resource
         $query = parent::getEloquentQuery();
         $user = Auth::user();
 
-        if (! $user instanceof User || ! $user->hasRole('admin') || $user->hasRole('super_admin')) {
+        if (! $user instanceof User) {
+            return $query->whereKey([]);
+        }
+
+        if ($user->canManageAllStudyPrograms()) {
             return $query;
+        }
+
+        if (! $user->hasRole('admin')) {
+            return $query->whereKey($user->getKey());
         }
 
         if ($user->study_program_id === null) {

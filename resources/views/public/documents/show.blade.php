@@ -92,7 +92,7 @@
                         <h2 class="text-lg font-semibold tracking-tight text-gray-900">Abstrak</h2>
                     </div>
                     <div class="mt-4 rich-content">
-                        {!! $document->abstract !!}
+                        {!! str($document->abstract)->sanitizeHtml() !!}
                     </div>
                 </section>
             @endif
