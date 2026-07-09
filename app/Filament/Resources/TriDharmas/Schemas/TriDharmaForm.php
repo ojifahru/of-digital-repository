@@ -52,7 +52,7 @@ class TriDharmaForm
                                 ->relationship(
                                     'category',
                                     'name',
-                                    fn ($query) => $query->whereNull('deleted_at')
+                                    fn($query) => $query->whereNull('deleted_at')
                                 )
                                 ->searchable()
                                 ->preload()
@@ -77,23 +77,23 @@ class TriDharmaForm
                                 ->relationship(
                                     'faculty',
                                     'name',
-                                    fn (Builder $query): Builder => self::scopeFacultyQuery($query)
+                                    fn(Builder $query): Builder => self::scopeFacultyQuery($query)
                                 )
-                                ->default(fn (): ?int => self::currentStudyProgram()?->faculty_id)
+                                ->default(fn(): ?int => self::currentStudyProgram()?->faculty_id)
                                 ->required()
                                 ->reactive()
-                                ->disabled(fn (): bool => self::isStudyProgramLocked())
+                                ->disabled(fn(): bool => self::isStudyProgramLocked())
                                 ->dehydrated()
-                                ->afterStateUpdated(fn (callable $set) => $set('study_program_id', null)),
+                                ->afterStateUpdated(fn(callable $set) => $set('study_program_id', null)),
 
                             Select::make('study_program_id')
                                 ->label('Program Studi')
                                 ->options(
-                                    fn (callable $get) => self::studyProgramOptions($get('faculty_id'))
+                                    fn(callable $get) => self::studyProgramOptions($get('faculty_id'))
                                 )
-                                ->default(fn (): ?int => self::currentUser()?->study_program_id)
+                                ->default(fn(): ?int => self::currentUser()?->study_program_id)
                                 ->required()
-                                ->disabled(fn (callable $get): bool => self::isStudyProgramLocked() || ! $get('faculty_id'))
+                                ->disabled(fn(callable $get): bool => self::isStudyProgramLocked() || ! $get('faculty_id'))
                                 ->dehydrated(),
 
                             Select::make('authors')
@@ -102,7 +102,7 @@ class TriDharmaForm
                                 ->relationship(
                                     'authors',
                                     'name',
-                                    fn ($query) => $query->whereNull('deleted_at')
+                                    fn($query) => $query->whereNull('deleted_at')
                                 )
                                 ->searchable()
                                 ->preload()
@@ -136,7 +136,6 @@ class TriDharmaForm
                                 ->disk('local')
                                 ->directory('tri_dharmas')
                                 ->visibility('private')
-                                ->preventFilePathTampering()
                                 ->acceptedFileTypes(['application/pdf'])
                                 ->maxSize(10240)
                                 ->required()

@@ -63,7 +63,6 @@ class AuthorForm
                             ->disk('public')
                             ->directory('authors')
                             ->visibility('public')
-                            ->preventFilePathTampering()
                             ->image()
                             ->imageEditor()
                             ->maxSize(2048),
