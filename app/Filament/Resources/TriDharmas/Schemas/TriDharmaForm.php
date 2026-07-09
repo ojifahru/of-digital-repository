@@ -137,7 +137,7 @@ class TriDharmaForm
                                 ->directory('tri_dharmas')
                                 ->visibility('private')
                                 ->acceptedFileTypes(['application/pdf'])
-                                ->maxSize(10240)
+                                ->maxSize(25600)
                                 ->required()
                                 ->columnSpanFull(),
                         ]),
