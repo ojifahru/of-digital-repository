@@ -37,7 +37,6 @@ class TriDharmaForm
 
                             RichEditor::make('abstract')
                                 ->label('Abstrak')
-                                ->maxLength(1000)
                                 ->columnSpanFull(),
                         ]),
 
